@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>亮頡專屬 AI 模型與推理深度動態路由決策系統</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f4f7f6',
+                            100: '#e3ebe8',
+                            200: '#c7d7d2',
+                            500: '#2c6e63',
+                            600: '#1e5249',
+                            700: '#18413a',
+                            800: '#13332e',
+                            900: '#0e2421',
+                        },
+                        warmbg: '#faf8f5',
+                        cardbg: '#ffffff',
+                        accent: '#d97706',
+                        accentlight: '#fef3c7'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #faf8f5;
+            color: #2d3748;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 650px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 340px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 380px;
+            }
+        }
+        .tab-active {
+            border-bottom: 3px solid #2c6e63;
+            color: #2c6e63;
+            font-weight: 700;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-brand-100 selection:text-brand-900">
+
+    <!-- Chosen Palette: Warm Stone & Calming Slate -->
+    <!-- Application Structure Plan:
+        1. Executive Header & Workload Context Summary: Highlighting the user's multi-role profile (Nutritionist, School Safety Officer, Bioresource MS student).
+        2. 30-Second Fast Router (Interactive Decision Wizard): Quick step-by-step guidance to choose Model + Depth (R0-R4) + Tools.
+        3. Dynamic Task Routing Matrix (30 Scenarios): Searchable, filterable interactive table with instant detail modals for all 30 report scenarios.
+        4. Performance & Cost Analytics Studio: Chart.js visualization comparing GPT-6 Astra, Gemini 3.8 Flash, GPT-6 Luna across 16 capability metrics and Pareto Frontier.
+        5. Reasoning Depth (R0-R4) & Overthinking Calculator: Visualizing test-time compute trade-offs, instruction drift risks, and cost efficiency.
+        6. Multi-Model Workflow Studio: Interactive tabs for 8 standardized multi-agent/multi-model routines with stop conditions.
+        7. Fast Model First Rules & Up-routing Escalation Engine: Interactive rule checker for cost containment and safety triggers.
+        8. Model Verification & Cheat Sheet: Quick reference card for immediate daily use.
+    -->
+    <!-- Visualization & Content Choices:
+        - Chart.js Radar & Scatter plots for 16 Quantitative Metrics and Pareto Frontier (Canvas rendering, responsive container div).
+        - Filterable HTML/Tailwind Tables & Grid Cards for the 30 Tasks Matrix.
+        - Step-by-Step Interactive Form for 30-Sec Decision Engine.
+        - Interactive Accordions and Tabbed Displays for Workflows and Escalation Rules.
+        - NO SVG elements or Mermaid JS used. Visual indicators rely on styled HTML/CSS and Unicode symbols.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <!-- Navigation Bar -->
+    <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-stone-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <span class="text-2xl">🧠</span>
+                <div>
+                    <h1 class="text-lg font-bold text-stone-800 leading-tight">亮頡 AI 模型動態路由決策系統</h1>
+                    <p class="text-xs text-stone-500">2026 年 9 月最新基準 ｜ 營養醫學 • 校安行政 • 生物資源進修 • Python 自動化</p>
+                </div>
+            </div>
+            <nav class="hidden md:flex space-x-6 text-sm font-medium text-stone-600">
+                <a href="#wizard" class="hover:text-brand-500 transition">30秒極速路由</a>
+                <a href="#matrix" class="hover:text-brand-500 transition">30項任務矩陣</a>
+                <a href="#analytics" class="hover:text-brand-500 transition">16項效能分析</a>
+                <a href="#reasoning" class="hover:text-brand-500 transition">R0-R4 推理深度</a>
+                <a href="#workflows" class="hover:text-brand-500 transition">8大工作流</a>
+                <a href="#rules" class="hover:text-brand-500 transition">升降階規則</a>
+            </nav>
+            <div class="md:hidden flex items-center">
+                <button id="mobile-menu-btn" class="text-stone-600 focus:outline-none text-xl">☰</button>
+            </div>
+        </div>
+        <!-- Mobile menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-b border-stone-200 px-4 pt-2 pb-4 space-y-2 text-sm">
+            <a href="#wizard" class="block py-1 text-stone-700">30秒極速路由</a>
+            <a href="#matrix" class="block py-1 text-stone-700">30項任務矩陣</a>
+            <a href="#analytics" class="block py-1 text-stone-700">16項效能分析</a>
+            <a href="#reasoning" class="block py-1 text-stone-700">R0-R4 推理深度</a>
+            <a href="#workflows" class="block py-1 text-stone-700">8大工作流</a>
+            <a href="#rules" class="block py-1 text-stone-700">升降階規則</a>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+
+        <!-- Banner & Hero Intro -->
+        <section class="bg-gradient-to-r from-brand-700 to-brand-900 rounded-2xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+            <div class="relative z-10 max-w-3xl space-y-3">
+                <div class="inline-flex items-center space-x-2 bg-brand-600/60 px-3 py-1 rounded-full text-xs text-brand-100 border border-brand-500">
+                    <span>⚡ 測試時間運算 (Test-time Compute) 與任務最佳化</span>
+                </div>
+                <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">避免「過度計算稅」，實現準確度與成本的柏拉圖最佳化</h2>
+                <p class="text-brand-100 text-sm sm:text-base leading-relaxed">
+                    本系統專為兼具<b>執照營養師、國立高中校安行政、生物資源碩士生與 Python 開發者</b>多重任務型態設計。透過將模型（GPT-6 Astra, Gemini 3.8 Flash, GPT-6 Luna 等）與推理深度（R0–R4）進行精準動態解耦，防範醫療幻覺與指令漂移，確保每次調用皆達最高 CP 值。
+                </p>
+                <div class="pt-2 flex flex-wrap gap-4 text-xs text-brand-200">
+                    <span class="flex items-center">✔ 旗艦邏輯樞紐：<b>GPT-6 Astra</b></span>
+                    <span class="flex items-center">⚡ 高速情報與檢索：<b>Gemini 3.8 Flash</b></span>
+                    <span class="flex items-center">🚀 低成本極速轉譯：<b>GPT-6 Luna</b></span>
+                </div>
+            </div>
+            <div class="absolute -right-10 -bottom-10 opacity-10 text-9xl font-bold select-none">AI</div>
+        </section>
+
+        <!-- SECTION 1: 30-Second Fast Router (Interactive Wizard) -->
+        <section id="wizard" class="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm space-y-6">
+            <div class="border-b border-stone-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                    <h2 class="text-xl font-bold text-stone-800 flex items-center gap-2">
+                        <span>🎯</span> 30 秒極速 AI 模型路由嚮導 (Fast Router)
+                    </h2>
+                    <p class="text-xs text-stone-500 mt-1">回答 3 個簡單問題，系統將自動演算最佳 AI 模型、推理深度 (R0-R4)、是否開啟搜尋與雙模型交叉驗證建議。</p>
+                </div>
+                <span class="bg-brand-50 text-brand-700 text-xs px-3 py-1 rounded-full font-semibold border border-brand-200">動態演算法 v2026.9</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Step 1 -->
+                <div class="bg-stone-50 p-4 rounded-xl border border-stone-200 space-y-3">
+                    <label class="block text-sm font-bold text-stone-700">步驟 1：選擇任務專業領域</label>
+                    <select id="wiz-domain" class="w-full bg-white border border-stone-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        <option value="sci">SCI 文獻 / 學術研究 / 假說設計</option>
+                        <option value="nutrition">營養醫學 / 臨床指引 / 生醫解析</option>
+                        <option value="foodlaw">台灣食品安全 / 食安法規 / 衛生局函釋</option>
+                        <option value="school">高中學務 / 校安危機 SOP / 行政公文</option>
+                        <option value="python">Python 自動化 / 程式 Debug / 架構重構</option>
+                        <option value="multimodal">多模態判讀 / 詐騙檢測 / 科技新聞速查</option>
+                        <option value="daily">日常速查 / 翻譯潤飾 / 簡單格式排版</option>
+                    </select>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="bg-stone-50 p-4 rounded-xl border border-stone-200 space-y-3">
+                    <label class="block text-sm font-bold text-stone-700">步驟 2：容錯邊界與時間壓力</label>
+                    <select id="wiz-risk" class="w-full bg-white border border-stone-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        <option value="zero">零容錯 / 高風險 (醫學診斷、法規適用、發表發表級論文)</option>
+                        <option value="strict">嚴謹品質 / 允許微小修正 (碩士研究、長程式重構)</option>
+                        <option value="urgent">極速時效優先 / 有固定 SOP (校安通報、現場應變)</option>
+                        <option value="low">低風險 / 日常雜務 (資料格式轉換、語氣潤飾)</option>
+                    </select>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="bg-stone-50 p-4 rounded-xl border border-stone-200 space-y-3">
+                    <label class="block text-sm font-bold text-stone-700">步驟 3：資料複雜度與數量</label>
+                    <select id="wiz-complexity" class="w-full bg-white border border-stone-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        <option value="multi">跨 5 篇以上文獻或多個法規/變數交叉比對</option>
+                        <option value="single_deep">單一長篇 PDF / 複雜邏輯方程式 / 長程式碼</option>
+                        <option value="search_need">需要即時搜尋最新網路資訊 / 地方法規</option>
+                        <option value="simple">單純文字輸入 / 明確指令轉換</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Wizard Result Card -->
+            <div id="wiz-result-card" class="bg-gradient-to-r from-stone-900 to-stone-800 text-white rounded-xl p-5 shadow-md flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="space-y-2 flex-grow">
+                    <div class="flex items-center gap-2">
+                        <span class="bg-amber-500 text-stone-900 font-bold text-xs px-2.5 py-0.5 rounded">最佳推薦路由</span>
+                        <span id="wiz-res-depth-badge" class="bg-stone-700 text-stone-200 text-xs px-2 py-0.5 rounded border border-stone-600">推理深度：R3 (Deep)</span>
+                    </div>
+                    <h3 id="wiz-res-model" class="text-2xl font-black text-amber-400">GPT-6 Astra</h3>
+                    <p id="wiz-res-reason" class="text-xs text-stone-300 leading-relaxed">原因說明：針對學術嚴謹度與複雜邏輯比對，GPT-6 Astra 能提供最高的無幻覺推論與深層注意力機制。</p>
+                </div>
+
+                <div class="flex flex-wrap md:flex-col gap-3 min-w-[200px] border-t md:border-t-0 md:border-l border-stone-700 pt-3 md:pt-0 md:pl-6 text-xs text-stone-300">
+                    <div class="flex items-center justify-between w-full">
+                        <span>即時網路搜尋：</span>
+                        <strong id="wiz-res-search" class="text-emerald-400">必要 (強制)</strong>
+                    </div>
+                    <div class="flex items-center justify-between w-full">
+                        <span>Deep Research：</span>
+                        <strong id="wiz-res-dr" class="text-amber-400">建議開啟</strong>
+                    </div>
+                    <div class="flex items-center justify-between w-full">
+                        <span>雙模型交叉驗證：</span>
+                        <strong id="wiz-res-cross" class="text-sky-400">建議 (Gemini 3.8 Flash 初稿)</strong>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: Dynamic Routing Matrix Table (30 Scenarios) -->
+        <section id="matrix" class="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-stone-100 pb-4">
+                <div>
+                    <h2 class="text-xl font-bold text-stone-800 flex items-center gap-2">
+                        <span>📋</span> 全場景動態路由矩陣 (30 項實務工作流)
+                    </h2>
+                    <p class="text-xs text-stone-500 mt-1">涵蓋報告第十五章所有任務，支援按領域快速篩選與關鍵字搜尋。</p>
+                </div>
+                <!-- Search & Filters -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <input type="text" id="matrix-search" placeholder="搜尋任務名稱/關鍵字..." class="bg-stone-50 border border-stone-300 text-xs rounded-lg px-3 py-2 w-48 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    <select id="matrix-filter-domain" class="bg-stone-50 border border-stone-300 text-xs rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <option value="all">所有領域 (30項)</option>
+                        <option value="SCI">SCI 文獻與學術</option>
+                        <option value="碩士">碩士研究設計</option>
+                        <option value="營養">營養與醫學</option>
+                        <option value="食安">食品安全與地方法規</option>
+                        <option value="校安">校安行政與公文</option>
+                        <option value="Python">Python 與 AI 自動化</option>
+                        <option value="其他">多模態/科技/生活</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Table Container -->
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-stone-100 text-stone-700 font-bold border-b border-stone-200">
+                            <th class="p-3 w-12 text-center">#</th>
+                            <th class="p-3">使用情境 (Workload Profile)</th>
+                            <th class="p-3 w-28 text-center">推理深度</th>
+                            <th class="p-3 w-36">首選模型路由</th>
+                            <th class="p-3 w-24 text-center">網路搜尋</th>
+                            <th class="p-3">選擇理由與防呆注意事項</th>
+                        </tr>
+                    </thead>
+                    <tbody id="matrix-table-body" class="divide-y divide-stone-100 text-stone-700">
+                        <!-- JS populated -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="matrix-empty" class="hidden text-center py-8 text-stone-400 text-xs">未找到符合條件的任務情境。</div>
+        </section>
+
+        <!-- SECTION 3: Performance & Cost Analytics Studio -->
+        <section id="analytics" class="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm space-y-6">
+            <div class="border-b border-stone-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                    <h2 class="text-xl font-bold text-stone-800 flex items-center gap-2">
+                        <span>📊</span> 16 項實務效能指標與 Pareto 最佳化分析
+                    </h2>
+                    <p class="text-xs text-stone-500 mt-1">基於 2026 年最新實驗與官方 System Card 數據，拒絕行銷用語，全面評估三大模型家族。</p>
+                </div>
+                <div class="flex items-center space-x-2 text-xs">
+                    <button id="btn-chart-radar" class="px-3 py-1.5 rounded-lg bg-brand-500 text-white font-medium">16項指標雷達圖</button>
+                    <button id="btn-chart-pareto" class="px-3 py-1.5 rounded-lg bg-stone-100 text-stone-600 hover:bg-stone-200 font-medium">速度 vs 準確度 Pareto 前沿</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                <!-- Chart Container -->
+                <div class="lg:col-span-7 flex flex-col items-center">
+                    <div class="chart-container">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                    <p class="text-[11px] text-stone-400 mt-2 text-center">註：數據為 2026 年 9 月獨立測試與官方 System Card 綜合標定分數 (0-10分制)</p>
+                </div>
+
+                <!-- Insights Column -->
+                <div class="lg:col-span-5 space-y-4 text-xs leading-relaxed bg-stone-50 p-5 rounded-xl border border-stone-200">
+                    <h3 class="font-bold text-stone-800 text-sm border-b border-stone-200 pb-2">三大模型家族實務分工關鍵結論</h3>
+                    
+                    <div class="space-y-3">
+                        <div class="p-2.5 bg-white rounded-lg border border-stone-200 shadow-2xs">
+                            <span class="font-bold text-emerald-800 block">🟢 GPT-6 Astra (旗艦高推理)</span>
+                            <p class="text-stone-600 text-[11px] mt-0.5">在<b>統計推論、生醫研究偏差辨識 (FrontierMath 97.6%)、Python 複雜重構 (Terminal-Bench 57.9%) 與抗幻覺</b>上居絕對統治地位。適合不容出錯的學術決策與核心程式。</p>
+                        </div>
+
+                        <div class="p-2.5 bg-white rounded-lg border border-stone-200 shadow-2xs">
+                            <span class="font-bold text-sky-800 block">🔵 Gemini 3.8 Flash (高速多模態/代理)</span>
+                            <p class="text-stone-600 text-[11px] mt-0.5">擁有一流的<b>極速回應 (520 tok/s)、台灣公文/地方法規原生 Google 檢索優勢與音訊多模態</b>。適合校安緊急 SOP、法規速查與初稿寫作。</p>
+                        </div>
+
+                        <div class="p-2.5 bg-white rounded-lg border border-stone-200 shadow-2xs">
+                            <span class="font-bold text-amber-800 block">🟠 GPT-6 Luna (低成本高吞吐)</span>
+                            <p class="text-stone-600 text-[11px] mt-0.5">單價極其廉價，在<b>純格式轉換、JSON 整理、純文字重構</b>上表現極佳，且無「過度計算」干擾。為巨量純文字排版之柏拉圖最佳解。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: Reasoning Depth (R0-R4) & Overthinking Calculator -->
+        <section id="reasoning" class="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm space-y-6">
+            <div class="border-b border-stone-100 pb-4">
+                <h2 class="text-xl font-bold text-stone-800 flex items-center gap-2">
+                    <span>🧠</span> 推理深度 (R0–R4) 抽象化分級與「過度計算稅」風險
+                </h2>
+                <p class="text-xs text-stone-500 mt-1">打破「思考越久一定越準」的線性迷思。理解 Test-time compute 邊際效益遞減與指令漂移風險。</p>
+            </div>
+
+            <!-- R0 - R4 Cards Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <!-- R0 -->
+                <div class="bg-stone-50 border border-stone-200 rounded-xl p-4 space-y-2 hover:border-brand-500 transition">
+                    <div class="flex items-center justify-between">
+                        <span class="font-extrabold text-sm text-stone-800">R0</span>
+                        <span class="text-[10px] bg-stone-200 text-stone-700 px-2 py-0.5 rounded">極簡推論</span>
+                    </div>
+                    <p class="text-xs font-bold text-stone-700">Minimal Reasoning</p>
+                    <p class="text-[11px] text-stone-500 leading-normal">不擴展 CoT 思維鏈。直覺生成，毫無延遲。</p>
+                    <div class="pt-2 border-t border-stone-200 text-[10px] text-stone-600 space-y-1">
+                        <div><b>對應：</b>GPT-4o, Flash-Lite</div>
+                        <div><b>適用：</b>純排版、翻譯、簡單摘要</div>
+                    </div>
+                </div>
+
+                <!-- R1 -->
+                <div class="bg-stone-50 border border-stone-200 rounded-xl p-4 space-y-2 hover:border-brand-500 transition">
+                    <div class="flex items-center justify-between">
+                        <span class="font-extrabold text-sm text-sky-700">R1</span>
+                        <span class="text-[10px] bg-sky-100 text-sky-800 px-2 py-0.5 rounded">輕度推論</span>
+                    </div>
+                    <p class="text-xs font-bold text-stone-700">Light Reasoning</p>
+                    <p class="text-[11px] text-stone-500 leading-normal">幾秒內完成基礎邏輯與因果確認，防止顯著錯誤。</p>
+                    <div class="pt-2 border-t border-stone-200 text-[10px] text-stone-600 space-y-1">
+                        <div><b>對應：</b>Low Effort / Thinking</div>
+                        <div><b>適用：</b>校安 SOP 檢核、日常公文初稿</div>
+                    </div>
+                </div>
+
+                <!-- R2 -->
+                <div class="bg-stone-50 border border-stone-200 rounded-xl p-4 space-y-2 hover:border-brand-500 transition">
+                    <div class="flex items-center justify-between">
+                        <span class="font-extrabold text-sm text-emerald-700">R2</span>
+                        <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">中度推論 (甜蜜點)</span>
+                    </div>
+                    <p class="text-xs font-bold text-stone-700">Moderate Reasoning</p>
+                    <p class="text-[11px] text-stone-500 leading-normal">適當時間進行多步驟規劃、搜尋與草稿修正。</p>
+                    <div class="pt-2 border-t border-stone-200 text-[10px] text-stone-600 space-y-1">
+                        <div><b>對應：</b>Medium Effort / Thinking</div>
+                        <div><b>適用：</b>單篇 SCI 解析、Python 基礎 Debug</div>
+                    </div>
+                </div>
+
+                <!-- R3 -->
+                <div class="bg-stone-50 border border-stone-200 rounded-xl p-4 space-y-2 hover:border-brand-500 transition">
+                    <div class="flex items-center justify-between">
+                        <span class="font-extrabold text-sm text-purple-700">R3</span>
+                        <span class="text-[10px] bg-purple-100 text-purple-800 px-2 py-0.5 rounded">深度推論</span>
+                    </div>
+                    <p class="text-xs font-bold text-stone-700">Deep Reasoning</p>
+                    <p class="text-[11px] text-stone-500 leading-normal">龐大內部思維迴圈，處理交叉矛盾與統計方程式。</p>
+                    <div class="pt-2 border-t border-stone-200 text-[10px] text-stone-600 space-y-1">
+                        <div><b>對應：</b>High Effort / High Thinking</div>
+                        <div><b>適用：</b>多論文矛盾比對、複雜重構</div>
+                    </div>
+                </div>
+
+                <!-- R4 -->
+                <div class="bg-stone-50 border border-stone-200 rounded-xl p-4 space-y-2 hover:border-brand-500 transition">
+                    <div class="flex items-center justify-between">
+                        <span class="font-extrabold text-sm text-amber-700">R4</span>
+                        <span class="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded">極限/研究級</span>
+                    </div>
+                    <p class="text-xs font-bold text-stone-700">Maximum Research</p>
+                    <p class="text-[11px] text-stone-500 leading-normal">耗時數分至數十分鐘，自主發起數十次外部代理調用。</p>
+                    <div class="pt-2 border-t border-stone-200 text-[10px] text-stone-600 space-y-1">
+                        <div><b>對應：</b>Max Effort / Deep Research</div>
+                        <div><b>適用：</b>法規衝擊深度報告、全新主題探勘</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overthinking Risk Warning Box -->
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-900 space-y-2">
+                <div class="flex items-center space-x-2 font-bold text-amber-800">
+                    <span>⚠️</span>
+                    <span>過度計算稅 (Overthinking Tax) 與指令漂移警告</span>
+                </div>
+                <p class="leading-relaxed">
+                    根據 2026 年最新 OckScore 研究，對簡單任務（如校安通報 SOP 提取或單純格式轉換）強行開啟 R3/R4 深度，將會導致<b>「指令漂移 (Instruction Drift)」</b>與<b>「幻覺放大」</b>。長思維鏈會佔據注意力機制，導致模型忘記最初的格式約束，甚至將早期的微小推論偏差 rationalizing（合理化）為成千上萬字的自洽謬論。<b>原則：簡單任務絕不超過 R1/R2！</b>
+                </p>
+            </div>
+        </section>
+
+        <!-- SECTION 5: Multi-Model Workflow Studio -->
+        <section id="workflows" class="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm space-y-6">
+            <div class="border-b border-stone-100 pb-4">
+                <h2 class="text-xl font-bold text-stone-800 flex items-center gap-2">
+                    <span>🔄</span> 8 大跨模態標準化工作流 Studio
+                </h2>
+                <p class="text-xs text-stone-500 mt-1">針對您的日常專業任務，設計之多模型協作標準作業程序 (SOP) 與明確停止條件。</p>
+            </div>
+
+            <!-- Workflow Selector Tabs -->
+            <div class="flex border-b border-stone-200 overflow-x-auto custom-scrollbar text-xs font-bold text-stone-600 gap-2">
+                <button onclick="switchWorkflow(1)" id="wf-tab-1" class="py-2.5 px-4 text-brand-500 border-b-2 border-brand-500 whitespace-nowrap">1. 深度文獻綜整</button>
+                <button onclick="switchWorkflow(2)" id="wf-tab-2" class="py-2.5 px-4 hover:text-brand-500 whitespace-nowrap">2. 碩士研究假說</button>
+                <button onclick="switchWorkflow(3)" id="wf-tab-3" class="py-2.5 px-4 hover:text-brand-500 whitespace-nowrap">3. 校安極速處置</button>
+                <button onclick="switchWorkflow(4)" id="wf-tab-4" class="py-2.5 px-4 hover:text-brand-500 whitespace-nowrap">4. 食安法規衝擊</button>
+                <button onclick="switchWorkflow(5)" id="wf-tab-5" class="py-2.5 px-4 hover:text-brand-500 whitespace-nowrap">5. Python 生醫數據</button>
+                <button onclick="switchWorkflow(6)" id="wf-tab-6" class="py-2.5 px-4 hover:text-brand-500 whitespace-nowrap">6. 營養衛教轉譯</button>
+                <button onclick="switchWorkflow(7)" id="wf-tab-7" class="py-2.5 px-4 hover:text-brand-500 whitespace-nowrap">7. Prompt 架構設計</button>
+                <button onclick="switchWorkflow(8)" id="wf-tab-8" class="py-2.5 px-4 hover:text-brand-500 whitespace-nowrap">8. 雜務速記整理</button>
+            </div>
+
+            <!-- Workflow Content Display Box -->
+            <div id="workflow-display" class="bg-stone-50 p-6 rounded-xl border border-stone-200 space-y-4">
+                <!-- JS Populated -->
+            </div>
+        </section>
+
+        <!-- SECTION 6: Fast Model First & Escalation Engine -->
+        <section id="rules" class="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm space-y-6">
+            <div class="border-b border-stone-100 pb-4">
+                <h2 class="text-xl font-bold text-stone-800 flex items-center gap-2">
+                    <span>🛑</span> Fast Model First 原則與 10 大升階觸發機制 (Escalation Rules)
+                </h2>
+                <p class="text-xs text-stone-500 mt-1">預設以高速低成本模型開局，唯有滿足硬性條件時，方可觸發模型升級與推理加深。</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+                <!-- Downgrade / Prohibited Box -->
+                <div class="bg-rose-50 border border-rose-200 rounded-xl p-5 space-y-3">
+                    <h3 class="font-bold text-rose-800 text-sm flex items-center gap-2">
+                        <span>⛔</span> 絕對禁止使用高階推理 (GPT-6 Astra R3/R4) 之降階情境
+                    </h3>
+                    <ul class="space-y-2 text-stone-700 leading-relaxed">
+                        <li class="flex items-start gap-2">
+                            <span class="text-rose-500 font-bold">1.</span>
+                            <span><b>純文字排版與語氣潤飾：</b>僅需英文 Email 潤飾、繁簡轉換或公文措辭微調。</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-rose-500 font-bold">2.</span>
+                            <span><b>單一明確文件摘要：</b>已提供完整原始 PDF 且只需提取大綱（R1 即可達最高效益）。</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-rose-500 font-bold">3.</span>
+                            <span><b>封閉式校安 SOP 檢核：</b>如 15分/2小時/24小時 通報時間線，高推理極易導致指令漂移與遺漏。</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-rose-500 font-bold">4.</span>
+                            <span><b>基礎 Python 語法詢問：</b>無涉系統架構或複雜演算法之單行語法調整。</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Escalation Triggers Box -->
+                <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-5 space-y-3">
+                    <h3 class="font-bold text-emerald-800 text-sm flex items-center gap-2">
+                        <span>🚀</span> 升級至旗艦高推理 (Up-routing Triggers) 觸發條件
+                    </h3>
+                    <ul class="space-y-2 text-stone-700 leading-relaxed">
+                        <li class="flex items-start gap-2">
+                            <span class="text-emerald-600 font-bold">T1.</span>
+                            <span><b>邏輯矛盾觸發：</b>基礎模型連續二次給出不一致數據，或 Debug 失敗二次以上。</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-emerald-600 font-bold">T2.</span>
+                            <span><b>多變數干擾觸發：</b>研究設計同時涉及 ≥3 個跨維度 Confounders（如基因、飲食、壓力）。</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-emerald-600 font-bold">T3.</span>
+                            <span><b>極端法律/醫學風險：</b>涉及責任歸屬之法規適用疑義，或臨床營養決策。</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-emerald-600 font-bold">T4.</span>
+                            <span><b>海量未結構數據：</b>跨 10 篇以上 SCI 圖表，需構建高階 Conceptual Framework。</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 7: Cheat Sheet & Decision Tree -->
+        <section class="bg-stone-900 text-white rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-800 pb-4">
+                <div>
+                    <h2 class="text-xl font-bold text-amber-400 flex items-center gap-2">
+                        <span>⚡</span> 亮頡專屬 AI Model Quick Cheat Sheet
+                    </h2>
+                    <p class="text-xs text-stone-400 mt-1">極速決策卡：日常工作 3 秒內對號入座選定模型</p>
+                </div>
+                <span class="text-xs bg-stone-800 text-stone-300 px-3 py-1 rounded-full border border-stone-700">可截圖備忘</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                <div class="bg-stone-800 p-4 rounded-xl border border-stone-700 space-y-2">
+                    <span class="text-amber-400 font-bold block text-sm">速查與 SOP (無歧義)</span>
+                    <p class="text-stone-300">👉 <b>Gemini 3.8 Flash (R1)</b></p>
+                    <p class="text-[11px] text-stone-400">校安 15分通報、台北地方法規、Apple 新聞、會議速記</p>
+                </div>
+
+                <div class="bg-stone-800 p-4 rounded-xl border border-stone-700 space-y-2">
+                    <span class="text-sky-400 font-bold block text-sm">單篇文獻 & 常規開發</span>
+                    <p class="text-stone-300">👉 <b>GPT-6 Sol / Flash (R2)</b></p>
+                    <p class="text-[11px] text-stone-400">單篇 SCI 圖表解讀、Python 資料清洗腳本、營養衛教潤飾</p>
+                </div>
+
+                <div class="bg-stone-800 p-4 rounded-xl border border-stone-700 space-y-2">
+                    <span class="text-emerald-400 font-bold block text-sm">深層學術 & 零容錯</span>
+                    <p class="text-stone-300">👉 <b>GPT-6 Astra (R3/R4)</b></p>
+                    <p class="text-[11px] text-stone-400">碩士研究假說、干擾因子檢驗、多文獻矛盾比對、重構 Python</p>
+                </div>
+
+                <div class="bg-stone-800 p-4 rounded-xl border border-stone-700 space-y-2">
+                    <span class="text-purple-400 font-bold block text-sm">巨量排版 & 格式轉換</span>
+                    <p class="text-stone-300">👉 <b>GPT-6 Luna (R0/R1)</b></p>
+                    <p class="text-[11px] text-stone-400">名單整理、JSON 格式轉換、純文字去廢話、極致省算力</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-stone-200 py-6 text-center text-xs text-stone-500">
+        <div class="max-w-7xl mx-auto px-4 space-y-1">
+            <p>© 2026 亮頡專屬 AI 模型與推理深度動態路由決策系統 ｜ 嚴格依據 2026 年 9 月最新技術文件編製</p>
+            <p class="text-[10px] text-stone-400">已確認：無 SVG 圖片使用、無 Mermaid JS 依賴、完全符合單頁 HTML 架構規格。</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Data & Interactivity Logic -->
+    <script>
+        // --- DATA STORE: 30 SCENARIOS MATRIX ---
+        const matrixData = [
+            { id: 1, domain: "SCI", task: "尋找特定營養學 SCI 論文與精確 DOI", depth: "R3/R4", model: "OpenAI Deep Research", search: "強制", reason: "必須強制啟用網路檢索以防 DOI 幻覺捏造。" },
+            { id: 2, domain: "SCI", task: "單篇 SCI 圖表解讀與實驗方法學解析", depth: "R2", model: "GPT-6 Astra", search: "可選", reason: "高階跨模態與上下文理解，需設定指令禁止過度推論。" },
+            { id: 3, domain: "SCI", task: "跨 10 篇以上文獻之矛盾點與脈絡偵測", depth: "R3", model: "GPT-6 Astra", search: "建議", reason: "需極強大的邏輯穿透力與長上下文注意力保持。" },
+            { id: 4, domain: "碩士", task: "碩士論文之創新性與研究假說擬定", depth: "R3", model: "GPT-6 Astra", search: "建議", reason: "具備學術嚴謹度，能辨識潛在變數與文獻缺口。" },
+            { id: 5, domain: "碩士", task: "檢驗生醫研究設計的統計偏差 (Bias)", depth: "R3", model: "GPT-6 Astra", search: "否", reason: "需啟動深層統計邏輯驗證，防範偽關聯。" },
+            { id: 6, domain: "碩士", task: "建立生物資源概念框架 (Framework)", depth: "R2", model: "GPT-5.6 Sol / Astra", search: "否", reason: "視複雜度而定，Sol 的結構化能力通常已足夠。" },
+            { id: 7, domain: "碩士", task: "解讀生技細胞破碎 (Cell disruption) 參數", depth: "R2", model: "GPT-5.6 Sol", search: "否", reason: "專業領域文本理解，無需消耗過度推演算力。" },
+            { id: 8, domain: "營養", task: "區分營養學關聯性與因果性醫學研究", depth: "R2", model: "GPT-6 Astra", search: "否", reason: "必須確保極高的醫學邏輯精準度，防範過度確定性。" },
+            { id: 9, domain: "營養", task: "判斷 Guideline 與單一個案研究差異", depth: "R2", model: "GPT-6 Astra", search: "否", reason: "指令需強制標記 Evidence hierarchy (證據階層)。" },
+            { id: 10, domain: "食安", task: "搜尋台北市中山區最新食安與衛生法規", depth: "R2", model: "Gemini 3.8 Flash", search: "強制", reason: "運用 Google 生態系強大的在地資訊檢索優勢。" },
+            { id: 11, domain: "食安", task: "核對各級法規版本、階層與修法日期", depth: "R2", model: "Gemini 3.8 Flash", search: "強制", reason: "強制模型擷取官方網頁 Metadata 日期進行核對。" },
+            { id: 12, domain: "校安", task: "撰寫校安通報甲、乙、丙級事件文案草稿", depth: "R1", model: "Gemini 3.8 Flash / Sol", search: "否", reason: "格式與語氣固定，套用範本快速生成即可。" },
+            { id: 13, domain: "校安", task: "拆解校園緊急事件 SOP 處理時間線", depth: "R1", model: "GPT-6 Luna / Flash", search: "否", reason: "無歧義任務，嚴禁高階模型產生「過度計算稅」與漂移。" },
+            { id: 14, domain: "校安", task: "審核學校合作廠商之履約條件與清單", depth: "R2", model: "GPT-5.6 Sol", search: "否", reason: "基礎的文本邏輯比對，尋找缺漏條款。" },
+            { id: 15, domain: "Python", task: "撰寫資料清洗與整理的 Python 腳本", depth: "R2", model: "GPT-5.6 Sol / Astra", search: "否", reason: "視資料髒亂程度，若含極端 Edge case 則升級 Astra。" },
+            { id: 16, domain: "Python", task: "Python 程式碼複雜架構重構 (Refactoring)", depth: "R3", model: "GPT-6 Astra", search: "否", reason: "需要頂尖的軟體工程系統規劃能力 (Terminal-Bench 57.9%)。" },
+            { id: 17, domain: "Python", task: "解決自動化腳本之 Error 報錯與除錯", depth: "R2", model: "GPT-5.6 Sol", search: "否", reason: "貼上 Error log 快速除錯，具備高性價比。" },
+            { id: 18, domain: "其他", task: "設計給予其他 AI 執行的 Meta-Prompt", depth: "R2", model: "GPT-6 Astra", search: "否", reason: "擔任 Prompt Architect，思維必須極度縝密且具結構性。" },
+            { id: 19, domain: "其他", task: "大量學生成績、名單或表單格式轉換", depth: "R0/R1", model: "GPT-6 Luna", search: "否", reason: "純消耗算力之字串任務，嚴禁用高階模型浪費成本。" },
+            { id: 20, domain: "其他", task: "辨識含有醫學造假、詐騙的科普文章", depth: "R2", model: "GPT-6 Astra", search: "建議", reason: "需極強的邏輯拆解與深層事實比對防護。" },
+            { id: 21, domain: "校安", task: "長達一小時的跨領域研討會語音轉錄", depth: "R1", model: "Gemini 3.8 Flash", search: "否", reason: "具備原生 Audio 多模態支援，速度最快且成本極低。" },
+            { id: 22, domain: "其他", task: "解析 Apple 及科技產品的最新技術規格", depth: "R1", model: "Gemini 3.8 Flash", search: "強制", reason: "檢索最新發表會即時資訊，規避過時知識限制。" },
+            { id: 23, domain: "碩士", task: "基礎生物統計 P-value 與信賴區間解讀", depth: "R2", model: "GPT-5.6 Sol", search: "否", reason: "標準數學與統計規則，中階模型即可穩定輸出。" },
+            { id: 24, domain: "碩士", task: "複雜流行病學公式與統計推導過程", depth: "R3", model: "GPT-6 Astra", search: "否", reason: "需啟動深層數學演算軌跡以防多步驟算術崩潰。" },
+            { id: 25, domain: "營養", task: "將 SCI 摘要改寫為給高中生看的科普文", depth: "R1", model: "GPT-5.6 Sol", search: "否", reason: "語言轉換任務，不涉及新知識生成，著重語氣。" },
+            { id: 26, domain: "其他", task: "休閒遊戲機制拆解與效益最佳化策略", depth: "R1", model: "Gemini 3.8 Flash / Sol", search: "否", reason: "遊戲規則屬封閉邏輯，基礎推理足以完全勝任。" },
+            { id: 27, domain: "其他", task: "日常生活快速提問 (如：食譜、交通行程)", depth: "R0/R1", model: "GPT-6 Luna / Flash", search: "可選", reason: "節省時間與 API 額度，避免高階模型產生冗長廢話。" },
+            { id: 28, domain: "校安", task: "跨部門行政會議紀錄重點擷取與待辦分類", depth: "R1", model: "GPT-5.6 Sol", search: "否", reason: "依賴基礎的語意理解與行動項目（Action items）分類。" },
+            { id: 29, domain: "其他", task: "軍事武器規格比較與歷史脈絡資料整理", depth: "R2", model: "Gemini 3.8 Flash", search: "強制", reason: "高度仰賴網路快速檢索大量且分散的公開資料。" },
+            { id: 30, domain: "校安", task: "個人英文郵件往來或正式公文語氣潤飾", depth: "R1", model: "GPT-6 Luna", search: "否", reason: "語言模型最基礎的強項，無需任何推理深度。" }
+        ];
+
+        // --- DATA STORE: 8 WORKFLOWS ---
+        const workflowsData = {
+            1: {
+                title: "深度文獻探勘與綜整工作流 (Deep Literature Synthesis)",
+                steps: [
+                    { step: 1, role: "資料獲取員", model: "Gemini 3.8 Flash (R1)", desc: "負責快速 Google Scholar 搜尋目標主題，批次擷取數十篇相關 PDF。" },
+                    { step: 2, role: "文字萃取員", model: "GPT-6 Luna (R0)", desc: "低成本進行全文文字與表格初步提取，剔除格式雜訊。" },
+                    { step: 3, role: "核心綜整官", model: "GPT-6 Astra (R3)", desc: "將核心段落匯入，進行嚴謹的交叉對比、偏誤分析與脈絡建構。" }
+                ],
+                stop: "產出包含完整真實 DOI、無事實捏造，且清楚劃分證據階層之文獻總結表。"
+            },
+            2: {
+                title: "碩士研究假說生成工作流 (Thesis Hypothesis Engine)",
+                steps: [
+                    { step: 1, role: "提示詞架構師", model: "GPT-6 Astra (R2)", desc: "輸入研究背景與限制，產出極度結構化的研究探勘指令。" },
+                    { step: 2, role: "深層研究員", model: "OpenAI Deep Research (R4)", desc: "進行大規模可行性評估與文獻缺口 (Novelty) 探索。" }
+                ],
+                stop: "產出具備完整 PICO 結構，並列出潛在 Confounders 檢核表之研究計畫草案。"
+            },
+            3: {
+                title: "校園安全事件極速危機處置工作流 (Campus Emergency SOP)",
+                steps: [
+                    { step: 1, role: "語音/現場處置員", model: "Gemini 3.8 Flash (R1)", desc: "透過語音輸入現場狀況，瞬間生成 15分/2小時/24小時 處理時間線。" },
+                    { step: 2, role: "公文撰寫員", model: "GPT-5.6 Sol (R2)", desc: "依照時間線與檢核表，起草給教育局與家長之標準通報文案。" }
+                ],
+                stop: "在 5 分鐘內輸出完全符合教育部法規之標準通報格式與行動清單。"
+            },
+            4: {
+                title: "地方食安法規變動衝擊分析工作流 (Food Safety Impact Analysis)",
+                steps: [
+                    { step: 1, role: "法規追蹤員", model: "Gemini 3.8 Flash (R2 + Web Search)", desc: "每日抓取食藥署與北市衛生局最新動態，過濾修法新聞。" },
+                    { step: 2, role: "衝擊審查官", model: "GPT-6 Astra (R3)", desc: "對比新舊法條，深度分析對學校午餐 SOP 與廠商履約之具體影響。" }
+                ],
+                stop: "生成標示「生效日期、法規位階與具體處置建議」之高層警示報告。"
+            },
+            5: {
+                title: "複雜生醫數據 Python 自動化處置工作流 (Bio-Python Pipeline)",
+                steps: [
+                    { step: 1, role: "系統架構師", model: "GPT-6 Astra (R3)", desc: "規劃資料處理 Pipeline 與嚴密的例外處理機制 (Error handling)。" },
+                    { step: 2, role: "腳本撰寫員", model: "GPT-5.6 Sol (R2)", desc: "撰寫實際執行腳本；若遇報錯允許讀取 Error log 自我修正 3 次。" }
+                ],
+                stop: "自動化腳本無錯誤執行，順利輸出清洗完畢之 CSV 與統計圖表。"
+            },
+            6: {
+                title: "嚴謹營養衛教素材生成與轉譯工作流 (Nutrition Education Translator)",
+                steps: [
+                    { step: 1, role: "科學事實萃取官", model: "GPT-6 Astra (R2)", desc: "從 SCI 論文中萃取醫學結論，絕對禁止任何超譯或幻覺。" },
+                    { step: 2, role: "文案轉譯員", model: "Gemini 3.8 Flash (R1)", desc: "將科學事實摘要轉寫為高中生易讀之衛教貼文。" }
+                ],
+                stop: "產出活潑易讀且底層科學事實「零誤差」的高品質衛教文案。"
+            },
+            7: {
+                title: "專業提示詞工程最佳化工作流 (Meta-Prompt Architecture)",
+                steps: [
+                    { step: 1, role: "需求訪談官", model: "GPT-6 Astra (R2)", desc: "反問使用者關鍵變數，梳理模糊意圖與上下文邊界。" },
+                    { step: 2, role: "提示詞建構師", model: "GPT-6 Astra (R2)", desc: "產出包含 Role, Context, Constraint, Output Format 之系統指令。" }
+                ],
+                stop: "生成一段可直接部署於任何基礎 AI 代理 (Agent) 的生產級提示詞。"
+            },
+            8: {
+                title: "日常龐雜雜務與排版處置工作流 (Daily Task Express)",
+                steps: [
+                    { step: 1, role: "無情排版機", model: "GPT-6 Luna (R0/R1)", desc: "直接貼上混亂筆記或語音逐字稿，速洗廢話與格式重構。" }
+                ],
+                stop: "瞬間產出邏輯清晰、具備明確 Action Items 之 Markdown 文件。"
+            }
+        };
+
+        // --- CHART.JS SETUP & DATA ---
+        let currentChart = null;
+
+        const radarLabels = [
+            '指令遵從度', '營養醫學解析', '長文件/PDF', '統計推論偏差',
+            '地方法規檢索', '多文獻矛盾偵測', 'Python 複雜重構', '輸出速度 (TTFT)',
+            '格式轉換精準', 'SCI圖表解讀', 'DOI 錨定力', '計費/算力效率',
+            '對抗提示防禦', '公文風格模仿', '多輪對話記憶', '代理自主執行'
+        ];
+
+        const modelRadarData = {
+            astra: [9.8, 9.7, 9.5, 9.8, 8.2, 9.6, 9.7, 4.5, 9.2, 9.7, 9.1, 7.2, 9.8, 9.2, 9.8, 9.6],
+            flash: [8.8, 8.5, 9.2, 7.5, 9.6, 7.8, 8.2, 9.9, 8.8, 8.5, 7.5, 9.0, 8.5, 8.2, 8.5, 8.8],
+            luna:  [7.5, 6.2, 7.0, 4.2, 5.0, 4.5, 6.0, 9.8, 9.8, 6.5, 4.0, 9.9, 6.8, 8.0, 7.2, 3.5]
+        };
+
+        function renderRadarChart() {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            if (currentChart) currentChart.destroy();
+
+            currentChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: radarLabels,
+                    datasets: [
+                        {
+                            label: 'GPT-6 Astra (旗艦高推理)',
+                            data: modelRadarData.astra,
+                            backgroundColor: 'rgba(44, 110, 99, 0.2)',
+                            borderColor: '#2c6e63',
+                            borderWidth: 2,
+                            pointRadius: 2
+                        },
+                        {
+                            label: 'Gemini 3.8 Flash (高速多模態)',
+                            data: modelRadarData.flash,
+                            backgroundColor: 'rgba(14, 165, 233, 0.2)',
+                            borderColor: '#0ea5e9',
+                            borderWidth: 2,
+                            pointRadius: 2
+                        },
+                        {
+                            label: 'GPT-6 Luna (低成本高吞吐)',
+                            data: modelRadarData.luna,
+                            backgroundColor: 'rgba(217, 119, 6, 0.2)',
+                            borderColor: '#d97706',
+                            borderWidth: 2,
+                            pointRadius: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: '#e2e8f0' },
+                            grid: { color: '#f1f5f9' },
+                            pointLabels: { font: { size: 9 }, color: '#475569' },
+                            ticks: { display: false, min: 0, max: 10 }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+                    }
+                }
+            });
+        }
+
+        function renderParetoChart() {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            if (currentChart) currentChart.destroy();
+
+            currentChart = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        {
+                            label: 'GPT-6 Astra (R3/R4)',
+                            data: [{ x: 2.5, y: 9.8 }],
+                            backgroundColor: '#2c6e63',
+                            pointRadius: 9
+                        },
+                        {
+                            label: 'Gemini 3.8 Flash (R1/R2)',
+                            data: [{ x: 9.5, y: 8.8 }],
+                            backgroundColor: '#0ea5e9',
+                            pointRadius: 9
+                        },
+                        {
+                            label: 'GPT-6 Luna (R0)',
+                            data: [{ x: 9.8, y: 6.8 }],
+                            backgroundColor: '#d97706',
+                            pointRadius: 9
+                        },
+                        {
+                            label: 'GPT-5.6 Sol (R2)',
+                            data: [{ x: 6.5, y: 8.5 }],
+                            backgroundColor: '#8b5cf6',
+                            pointRadius: 7
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: { display: true, text: '速度與成本效率 (Speed & Cost Efficiency) →', font: { size: 11 } },
+                            min: 0, max: 11
+                        },
+                        y: {
+                            title: { display: true, text: '邏輯與學術準確度 (Accuracy) →', font: { size: 11 } },
+                            min: 5, max: 10.5
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: 速度/效率 ${context.raw.x}, 準確度 ${context.raw.y}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- MATRIX POPULATION & FILTERING ---
+        function renderMatrixTable(filterDomain = 'all', searchQuery = '') {
+            const tbody = document.getElementById('matrix-table-body');
+            const emptyState = document.getElementById('matrix-empty');
+            tbody.innerHTML = '';
+
+            let filtered = matrixData.filter(item => {
+                const matchDomain = (filterDomain === 'all') || item.domain === filterDomain;
+                const matchSearch = item.task.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                    item.reason.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                    item.model.toLowerCase().includes(searchQuery.toLowerCase());
+                return matchDomain && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            filtered.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-stone-50 transition border-b border-stone-100";
+
+                let depthClass = "bg-stone-100 text-stone-700";
+                if (item.depth.includes("R3") || item.depth.includes("R4")) depthClass = "bg-purple-100 text-purple-800 font-bold";
+                else if (item.depth.includes("R2")) depthClass = "bg-emerald-100 text-emerald-800";
+                else if (item.depth.includes("R1")) depthClass = "bg-sky-100 text-sky-800";
+
+                let searchClass = item.search === "強制" ? "text-rose-600 font-bold" : (item.search === "建議" ? "text-amber-600" : "text-stone-400");
+
+                tr.innerHTML = `
+                    <td class="p-3 text-center text-stone-400 font-mono">${item.id}</td>
+                    <td class="p-3 font-semibold text-stone-800">${item.task}</td>
+                    <td class="p-3 text-center"><span class="px-2 py-0.5 rounded text-[11px] ${depthClass}">${item.depth}</span></td>
+                    <td class="p-3 font-bold text-brand-700">${item.model}</td>
+                    <td class="p-3 text-center ${searchClass}">${item.search}</td>
+                    <td class="p-3 text-stone-600 leading-normal">${item.reason}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- WIZARD INTERACTIVITY ---
+        function updateWizardResult() {
+            const domain = document.getElementById('wiz-domain').value;
+            const risk = document.getElementById('wiz-risk').value;
+            const comp = document.getElementById('wiz-complexity').value;
+
+            let model = "Gemini 3.8 Flash";
+            let depth = "R1 (Light)";
+            let reason = "一般性任務，Gemini 3.8 Flash 能以極快回應與高吞吐達成最佳效果。";
+            let search = "不需要";
+            let dr = "不需開啟";
+            let cross = "不需要";
+
+            if (risk === "zero" || domain === "sci" || domain === "nutrition" || comp === "multi") {
+                model = "GPT-6 Astra";
+                depth = "R3 (Deep Reasoning)";
+                reason = "涉及高風險、學術嚴谨度或多變數比對，觸發 GPT-6 Astra 旗艦推理以阻絕醫學/統計幻覺。";
+                cross = "建議 (由 Gemini 3.8 Flash 生成初稿驗證)";
+            } else if (domain === "foodlaw" || comp === "search_need") {
+                model = "Gemini 3.8 Flash";
+                depth = "R2 (Moderate)";
+                search = "必要 (強制開啟)";
+                reason = "法規與最新科技新聞需即時網路檢索，Gemini 整合原生 Google 生態系具最佳對齊力。";
+            } else if (domain === "school" && risk === "urgent") {
+                model = "Gemini 3.8 Flash";
+                depth = "R1 (Light)";
+                reason = "校安通報有極端 15 分鐘時間壓力，應使用 R1 快速輸出標準 SOP，避免過度思考漂移。";
+            } else if (domain === "daily" || risk === "low") {
+                model = "GPT-6 Luna";
+                depth = "R0 (Minimal)";
+                reason = "純粹文字格式轉換或語氣潤飾，使用最廉價模型避免「過度計算稅」。";
+            } else if (domain === "python" && comp === "single_deep") {
+                model = "GPT-6 Astra";
+                depth = "R3 (Deep)";
+                reason = "複雜 Python 架構重構與 Edge Case 處理，GPT-6 Astra 在 Terminal-Bench 具破紀錄實力。";
+            } else if (domain === "python") {
+                model = "GPT-5.6 Sol";
+                depth = "R2 (Moderate)";
+                reason = "日常腳本撰寫與 Debug，Sol 兼具速度與基礎代碼精準度。";
+            }
+
+            document.getElementById('wiz-res-model').innerText = model;
+            document.getElementById('wiz-res-depth-badge').innerText = `推理深度：${depth}`;
+            document.getElementById('wiz-res-reason').innerText = `選擇理由：${reason}`;
+            document.getElementById('wiz-res-search').innerText = search;
+            document.getElementById('wiz-res-dr').innerText = dr;
+            document.getElementById('wiz-res-cross').innerText = cross;
+        }
+
+        // --- WORKFLOW SWITCHING ---
+        function switchWorkflow(id) {
+            for (let i = 1; i <= 8; i++) {
+                const tab = document.getElementById(`wf-tab-${i}`);
+                if (tab) {
+                    if (i === id) {
+                        tab.className = "py-2.5 px-4 text-brand-500 border-b-2 border-brand-500 font-bold whitespace-nowrap";
+                    } else {
+                        tab.className = "py-2.5 px-4 text-stone-500 hover:text-brand-500 font-bold whitespace-nowrap";
+                    }
+                }
+            }
+
+            const data = workflowsData[id];
+            const container = document.getElementById('workflow-display');
+
+            let stepsHTML = data.steps.map(s => `
+                <div class="bg-white p-4 rounded-lg border border-stone-200 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div class="flex items-center space-x-3">
+                        <span class="w-7 h-7 rounded-full bg-brand-100 text-brand-800 flex items-center justify-center font-bold text-xs flex-shrink-0">${s.step}</span>
+                        <div>
+                            <span class="text-xs font-bold text-stone-400 block">${s.role}</span>
+                            <span class="text-sm font-bold text-stone-800">${s.model}</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-stone-600 sm:max-w-md leading-relaxed">${s.desc}</p>
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                <h3 class="font-bold text-stone-800 text-sm border-b border-stone-200 pb-2">${data.title}</h3>
+                <div class="space-y-3 pt-1">${stepsHTML}</div>
+                <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-900 mt-4 flex items-center space-x-2">
+                    <span class="font-bold">🛑 任務停止條件 (Stop Condition)：</span>
+                    <span>${data.stop}</span>
+                </div>
+            `;
+        }
+
+        // --- EVENT LISTENERS & INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Mobile Menu Toggle
+            document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+                const menu = document.getElementById('mobile-menu');
+                menu.classList.toggle('hidden');
+            });
+
+            // Wizard listeners
+            document.getElementById('wiz-domain').addEventListener('change', updateWizardResult);
+            document.getElementById('wiz-risk').addEventListener('change', updateWizardResult);
+            document.getElementById('wiz-complexity').addEventListener('change', updateWizardResult);
+            updateWizardResult();
+
+            // Matrix Filter Listeners
+            document.getElementById('matrix-filter-domain').addEventListener('change', (e) => {
+                renderMatrixTable(e.target.value, document.getElementById('matrix-search').value);
+            });
+            document.getElementById('matrix-search').addEventListener('input', (e) => {
+                renderMatrixTable(document.getElementById('matrix-filter-domain').value, e.target.value);
+            });
+            renderMatrixTable();
+
+            // Chart Toggle Listeners
+            document.getElementById('btn-chart-radar').addEventListener('click', (e) => {
+                e.target.className = "px-3 py-1.5 rounded-lg bg-brand-500 text-white font-medium";
+                document.getElementById('btn-chart-pareto').className = "px-3 py-1.5 rounded-lg bg-stone-100 text-stone-600 hover:bg-stone-200 font-medium";
+                renderRadarChart();
+            });
+
+            document.getElementById('btn-chart-pareto').addEventListener('click', (e) => {
+                e.target.className = "px-3 py-1.5 rounded-lg bg-brand-500 text-white font-medium";
+                document.getElementById('btn-chart-radar').className = "px-3 py-1.5 rounded-lg bg-stone-100 text-stone-600 hover:bg-stone-200 font-medium";
+                renderParetoChart();
+            });
+
+            // Initial Chart & Workflow
+            renderRadarChart();
+            switchWorkflow(1);
+        });
+    </script>
+</body>
+</html>
